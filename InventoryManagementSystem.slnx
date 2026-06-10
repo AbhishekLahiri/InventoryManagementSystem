@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="InventoryManagementSystem.Api/InventoryManagementSystem.Api.csproj" />
+  <Project Path="InventoryManagementSystem.Shared/InventoryManagementSystem.Shared.csproj" Id="c92a2fd4-264f-4893-8b1e-75b6ae4f827c" />
+  <Project Path="InventoryManagementSystem.Tests/InventoryManagementSystem.Tests.csproj" Id="9ebca176-d8a9-4f72-a927-8c328a5e1c44" />
+  <Project Path="InventoryManagementSystem.UI/InventoryManagementSystem.UI.csproj" Id="d9aaf50d-0a20-4eb2-970b-6d42b39882e3" />
+</Solution>

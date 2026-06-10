@@ -1,0 +1,134 @@
+﻿@page "/edit-item/{Id:int}"
+@inject InventoryServiceClient InventoryService
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <h2 class="text-primary fw-bold mb-4">Edit Inventory Item</h2>
+
+    @if (isLoading)
+    {
+        <div class="d-flex align-items-center mt-5">
+            <div class="spinner-border text-primary me-3" role="status"></div>
+            <strong class="text-secondary fs-5">Fetching item details...</strong>
+        </div>
+    }
+    else if (updateModel is null) {
+        <div class="alert alert-danger shadow-sm mt-4 p-4 text-center">
+            <h4><i class="bi bi-exclamation-triangle-fill me-2"></i> Item Not Found</h4>
+            <p>The inventory item you are trying to edit does not exist or was deleted.</p>
+            <button class="btn btn-outline-danger mt-2" @onclick="Cancel">Return to Dashboard</button>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0 p-4" style="max-width: 600px;">
+            <EditForm Model="@updateModel" OnValidSubmit="HandleValidSubmit">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-secondary">SKU</label>
+                    <InputText @bind-Value="updateModel.Sku" class="form-control bg-light" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-secondary">Item Name</label>
+                    <InputText @bind-Value="updateModel.Name" class="form-control" />
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-secondary">Quantity</label>
+                        <InputNumber @bind-Value="updateModel.Quantity" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-secondary">Unit Price ($)</label>
+                        <InputNumber @bind-Value="updateModel.UnitPrice" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-secondary">Category</label>
+
+                    @if (categories is not null && updateModel is not null)
+                    {
+                        <InputSelect @bind-Value="updateModel.CategoryId" class="form-select">
+                            <option value="0">-- Select a Category --</option>
+                            @foreach (var cat in categories)
+                            {
+                                <option value="@cat.Id">@cat.Name</option>
+                            }
+                        </InputSelect>
+                    }
+                    else
+                    {
+                        <select class="form-select" disabled>
+                            <option>Loading categories...</option>
+                        </select>
+                    }
+                </div>
+
+                <div class="d-flex gap-2 pt-2 border-top">
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm mt-3">
+                        <i class="bi bi-save me-2"></i> Save Changes
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary px-4 mt-3" @onclick="Cancel">
+                        Cancel
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private UpdateItemDto? updateModel;
+    private List<CategoryDto>? categories;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await InventoryService.GetCategoriesAsync();
+        
+        var originalItem = await InventoryService.GetItemByIdAsync(Id);
+
+        if (originalItem is not null)
+        {
+            updateModel = new UpdateItemDto
+            {
+                Id = originalItem.Id,
+                Sku = originalItem.Sku,
+                Name = originalItem.Name,
+                Quantity = originalItem.Quantity,
+                UnitPrice = originalItem.UnitPrice,
+                CategoryId = originalItem.CategoryId,
+                CategoryName = originalItem.CategoryName,
+            };
+        }
+        
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit(EditContext context)
+    {
+        if (updateModel is not null)
+        {
+            var selectedCategory = categories?.FirstOrDefault(c => c.Id == updateModel.CategoryId);
+            updateModel.CategoryName = selectedCategory?.Name ?? "Unassigned";
+
+            // Now send it to the backend
+            var updatedItem = await InventoryService.UpdateItemAsync(Id, updateModel);
+
+            if (updatedItem is not null)
+            {
+                Navigation.NavigateTo("/inventory");
+            }
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/inventory");
+    }
+}

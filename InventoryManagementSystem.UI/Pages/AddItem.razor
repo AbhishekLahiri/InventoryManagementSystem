@@ -1,0 +1,86 @@
+﻿@page "/add-item"
+@inject InventoryServiceClient InventoryService
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <h2 class="text-primary fw-bold mb-4">Add New Inventory Item</h2>
+
+    <div class="card shadow-sm border-0 p-4" style="max-width: 600px;">
+        <EditForm Model="@newItem" OnValidSubmit="HandleValidSubmit">
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-secondary">SKU</label>
+                <InputText @bind-Value="newItem.Sku" class="form-control" placeholder="e.g. LAP-001" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold text-secondary">Item Name</label>
+                <InputText @bind-Value="newItem.Name" class="form-control" placeholder="e.g. Dell XPS 15" />
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-secondary">Quantity</label>
+                    <InputNumber @bind-Value="newItem.Quantity" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-secondary">Unit Price ($)</label>
+                    <InputNumber @bind-Value="newItem.UnitPrice" class="form-control" />
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold text-secondary">Category</label>
+                <InputSelect @bind-Value="newItem.CategoryId" class="form-select">
+                    <option value="0">-- Select a Category --</option>
+                    @if (categories != null)
+                    {
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                    <i class="bi bi-save me-2"></i> Save Item
+                </button>
+                <button type="button" class="btn btn-outline-secondary px-4" @onclick="Cancel">
+                    Cancel
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    // 1. Using our new pure DTO!
+    private CreateItemDto newItem = new CreateItemDto();
+    
+    // Note: If you updated your Service to return CategoryDto, change this list type to CategoryDto!
+    private List<CategoryDto>? categories;
+
+    // 2. Fetch the categories for the dropdown
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await InventoryService.GetCategoriesAsync();
+    }
+
+    // 3. The exact method signature Blazor expects for OnValidSubmit
+    private async Task HandleValidSubmit(EditContext context)
+    {
+        var response = await InventoryService.CreateItemAsync(newItem);
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/inventory");
+        }
+    }
+
+    // 4. Cancel button
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/inventory");
+    }
+}

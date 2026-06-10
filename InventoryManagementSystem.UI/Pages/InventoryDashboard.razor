@@ -1,0 +1,108 @@
+﻿@page "/"
+@page "/inventory"
+@inject InventoryServiceClient InventoryService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Home</PageTitle>
+
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">Enterprise Inventory Dashboard</h2>
+        <button class="btn btn-success shadow-sm" @onclick="GoToAddItem">
+            <i class="bi bi-plus-circle me-2"></i> Add New Item
+        </button>
+    </div>
+
+    @if (inventoryItems == null)
+    {
+        <div class="d-flex justify-content-center align-items-center my-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <strong class="ms-3 text-secondary">Fetching database records...</strong>
+        </div>
+    }
+    else if (!inventoryItems.Any())
+    {
+        <div class="alert alert-info text-center p-5 shadow-sm" role="alert">
+            <h4 class="mb-3">No Inventory Items Found</h4>
+            <p class="text-muted">Your SQL Server table is connected, but currently empty.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark text-uppercase fs-7">
+                        <tr>
+                            <th class="ps-4">SKU</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th class="text-end">Quantity</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-center pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in inventoryItems)
+                        {
+                            <tr>
+                                <td class="ps-4 font-monospace fw-bold text-secondary">@item.Sku</td>
+                                <td class="fw-semibold">@item.Name</td>
+                                <td><span class="badge bg-light text-dark border">@item.CategoryName</span></td>
+                                @* <td><span class="badge bg-light text-dark border">@(item.Category?.Name ?? "Unassigned")</span></td> *@
+                                <td class="text-end">@item.Quantity</td>
+                                <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm px-3 me-2" @onclick='() => Navigation.NavigateTo($"/edit-item/{item.Id}")'>
+                                        <i class="bi bi-pencil me-1"></i> Edit
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm px-3" @onclick='() => DeleteItem(item.Id)'>
+                                        <i class="bi bi-trash me-1"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<InventoryItemDto>? inventoryItems;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInventory();
+    }
+
+    private async Task LoadInventory()
+    {
+        inventoryItems = await InventoryService.GetItemsAsync();
+    }
+
+    private async Task DeleteItem(int id)
+    {
+        // 🛑 1. Ask the browser to pop up a standard confirmation box
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to permanently delete this item? This cannot be undone.");
+        
+        // ✅ 2. Only proceed if they clicked "OK"
+        if (confirmed)
+        {
+            var response = await InventoryService.DeleteItemAsync(id);
+            if (response.IsSuccessStatusCode)
+            {
+                // Refresh the table to show the item is gone
+                await LoadInventory();
+            }
+        }
+    }
+
+    private void GoToAddItem()
+    {
+        Navigation.NavigateTo("/add-item");
+    }
+}

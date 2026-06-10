@@ -1,0 +1,26 @@
+## Visual Studio Build Outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+b表现/
+[Bb]in/
+[Oo]bj/
+
+## .NET Core / Blazor specific tool outputs
+.microsoft.visualstudio.web.usersecrets.json
+_backup/
+
+## User-specific Visual Studio Files
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+
+## Rider / JetBrains / VS Code caches
+.idea/
+.vscode/
+
+## OS specific files
+.DS_Store
+Thumbs.db
